@@ -1,83 +1,100 @@
 import React, { useState } from 'react';
-import io from 'socket.io-client';
 import { customAlphabet } from 'nanoid';
+import styled from 'styled-components';
+import socket from '../util';
 
-function JoinRoom() {
-    const socket = io.connect("http://localhost:8080/");
+const Container = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2em;
+`;
 
-    socket.on("connect", ()=>{
+const RoomIdInput = styled.input`
+  height: 30px;
+  width: 20em;
+  font-size: 17px;
+  outline: none;
+  border: 1px solid #222831;
+  border-radius: 3px;
+  padding: 0 10px;
+  background-color: #393E46;
+`;
+
+const Button = styled.button`
+  outline: none;
+  background-color: #222831;
+  color: #fff;
+  font-size: 17px;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  padding: 4px 18px;
+  transition: all 230ms ease-in-out;
+  margin-top: 1em;
+  cursor: pointer;
+  &:hover {
+    background-color: transparent;
+    border: 2px solid #222831;
+    color: #222831;
+  }
+`;
+
+function JoinRoom(props) {
+
+  const { setInRoom } = props;
+
+  socket.on("connect", () => {
     console.log(socket.connected);
-    });
+  });
 
-    socket.on("room_join_error", (message) =>{
-        alert(message);
-    })
+  socket.on("room_join_error", (message) => {
+    setIsJoining(false);
+    alert(message);
+  });
 
-    const nanoid = customAlphabet("abcdefghijklmnopqrstuvwxyz123456789", 10);
-    const [roomName, setRoomName] = useState(nanoid());
+  socket.on("room_joined", () => {
+    setInRoom(true);
+    setIsJoining(false);
+  });
 
-    function handleRoomNameChange(event){
-        const value = event.target.value;
-        setRoomName(value);
+  const nanoid = customAlphabet("abcdefghijklmnopqrstuvwxyz123456789", 10);
+  const id = nanoid();
+
+  const [roomName, setRoomName] = useState(id);
+  const [isJoining, setIsJoining] = useState(false);
+
+  function handleRoomNameChange(event) {
+    const value = event.target.value;
+    setRoomName(value);
+  }
+
+  function joinRoom(event) {
+    event.preventDefault();
+    if (!roomName || roomName.trim() === "") {
+      return;
     }
+    setIsJoining(true);
+    socket.emit("joinRoom", roomName);
+  }
 
-    function joinRoom(event){
-        event.preventDefault();
-
-        socket.emit("joinRoom", roomName);
-    }
-
-    const containerStyle = {
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: "2em"
-    }
-
-    const roomIdInputStyle = {
-        height: "30px",
-        width: "20em",
-        fontSize: "17px",
-        outline: "none",
-        border: "1px solid #8e44ad",
-        borderRadius: "3px",
-        padding: "0 10px"
-    }
-
-    const buttonStyle = {
-        outline: "none",
-        backgroundColor: "#8e44ad",
-        color: "#fff",
-        fontSize: "17px",
-        border: "2px solid transparent",
-        borderRadius: "5px",
-        padding: "4px 18px",
-        marginTop: "1em",
-        cursor: "pointer"
-    }
-
-    return(
-        <form onSubmit={joinRoom}>
-            <div className='Container' style={containerStyle}>
-                <h4>Enter Room ID to join the game</h4>
-                <input 
-                    className='RoomIdInput'
-                    placeholder='Room ID'
-                    style={roomIdInputStyle}
-                    value={roomName}
-                    onChange={handleRoomNameChange}
-                />
-                <button 
-                    className='JoinButton' 
-                    style={buttonStyle}>
-                    Click to Join
-                </button>
-            </div>
-        </form>
-    );
+  return (
+    <form onSubmit={joinRoom}>
+      <Container>
+        <h4>Enter Room ID to join the game</h4>
+        <RoomIdInput
+          placeholder='Room ID'
+          value={roomName}
+          onChange={handleRoomNameChange}
+        />
+        <Button disabled={isJoining}>
+          {isJoining ? "Joining" : "join"}
+        </Button>
+      </Container>
+    </form>
+  );
 }
 
 export default JoinRoom;
