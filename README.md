@@ -2,6 +2,6 @@
 
 An online multiplayer Tic-Tac-Toe Game.
 
-Deployed on Heroku : https://simpletic-tac-toe.herokuapp.com/
+Deployed on Render : https://tic-tac-toe-0vjb.onrender.com/
 
 Tech Stack : NodeJS, ExpresJS, Socket.io, ReactJS
